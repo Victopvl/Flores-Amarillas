@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rodri´s Flowers</title>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Orbitron:wght@500;700&display=swap');
+
+        :root {
+            --bg-base: #030508;
+            --panel-bg: rgba(10, 15, 25, 0.6);
+            --border-glow: rgba(0, 240, 255, 0.4);
+            --cyan: #00f0ff;
+            --green: #39ff14;
+            --yellow: #ffea00;
+            --red: #ff003c;
+            --text-main: #e0e6ed;
+            --font-term: 'Fira Code', monospace;
+            --font-display: 'Orbitron', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 100%, rgba(255, 234, 0, 0.05) 0%, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            font-family: var(--font-term);
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px var(--cyan);
+        }
+
+        header h1 {
+            font-family: var(--font-display);
+            color: var(--cyan);
+            font-size: 2rem;
+            letter-spacing: 3px;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            color: var(--green);
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        @media (max-width: 900px) {
+            .dashboard { grid-template-columns: 1fr; }
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.1), inset 0 0 15px rgba(0, 240, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            height: 450px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Decoraciones de las esquinas tipo Sci-Fi */
+        .panel::before, .panel::after {
+            content: ''; position: absolute; width: 15px; height: 15px; border: 2px solid var(--cyan);
+        }
+        .panel::before { top: 0; left: 0; border-right: none; border-bottom: none; }
+        .panel::after { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+        .panel-header {
+            background: rgba(0, 240, 255, 0.1);
+            border-bottom: 1px solid var(--border-glow);
+            padding: 10px 15px;
+            font-family: var(--font-display);
+            font-size: 0.8rem;
+            color: var(--cyan);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .terminal-body {
+            padding: 15px;
+            overflow-y: auto;
+            flex-grow: 1;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #a0aec0;
+        }
+
+        /* Custom Scrollbar */
+        .terminal-body::-webkit-scrollbar { width: 8px; }
+        .terminal-body::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
+        .terminal-body::-webkit-scrollbar-thumb { background: var(--cyan); border-radius: 4px; }
+
+        .log-line { margin-bottom: 5px; opacity: 0; animation: fadeInLog 0.3s forwards; }
+        .log-sys { color: var(--cyan); }
+        .log-cmd { color: var(--text-main); }
+        .log-success { color: var(--green); text-shadow: 0 0 8px rgba(57, 255, 20, 0.5); }
+        .log-alert { color: var(--yellow); text-shadow: 0 0 8px rgba(255, 234, 0, 0.6); font-weight: bold; }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 15px;
+            background-color: var(--green);
+            vertical-align: middle;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        @keyframes fadeInLog { to { opacity: 1; } }
+
+        .robotics-body {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Fondo cuadriculado tipo CAD */
+            background-image: 
+                linear-gradient(rgba(0, 240, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        .scanning-line {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: var(--cyan);
+            box-shadow: 0 0 15px 5px rgba(0, 240, 255, 0.4);
+            animation: scan 4s linear infinite;
+            z-index: 1;
+            opacity: 0.5;
+        }
+
+        @keyframes scan {
+            0% { top: 0; }
+            50% { top: 100%; }
+            100% { top: 0; }
+        }
+
+        .controls {
+            margin-top: 40px;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .cyber-button {
+            position: relative;
+            background: rgba(255, 234, 0, 0.1);
+            border: 1px solid var(--yellow);
+            color: var(--yellow);
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            padding: 15px 40px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            outline: none;
+            overflow: hidden;
+            transition: 0.3s;
+            box-shadow: 0 0 15px rgba(255, 234, 0, 0.2);
+            /* Estilo de esquinas cortadas */
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+        }
+
+        .cyber-button::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 234, 0, 0.4), transparent);
+            transition: 0.5s;
+        }
+
+        .cyber-button:hover {
+            background: rgba(255, 234, 0, 0.2);
+            box-shadow: 0 0 30px rgba(255, 234, 0, 0.6);
+            text-shadow: 0 0 5px var(--yellow);
+        }
+
+        .cyber-button:hover::before { left: 100%; }
+
+        .cyber-button:disabled {
+            border-color: #555; color: #555; cursor: not-allowed;
+            background: transparent; box-shadow: none; clip-path: none; border-radius: 5px;
+        }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(3, 5, 8, 0.85);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+            opacity: 0; visibility: hidden;
+            transition: opacity 0.5s ease;
+        }
+
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+
+        .modal-card {
+            background: linear-gradient(135deg, rgba(20, 25, 40, 0.8), rgba(10, 15, 20, 0.9));
+            border: 1px solid var(--yellow);
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 650px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(255, 234, 0, 0.2), inset 0 0 20px rgba(255, 234, 0, 0.05);
+            transform: translateY(30px) scale(0.95);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-overlay.active .modal-card { transform: translateY(0) scale(1); }
+
+        .modal-card h2 {
+            font-family: var(--font-display);
+            color: var(--yellow);
+            font-size: 2rem;
+            margin-bottom: 25px;
+            text-shadow: 0 0 15px rgba(255, 234, 0, 0.5);
+        }
+
+        .modal-msg {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-size: 1.15rem;
+            line-height: 1.7;
+            color: #e0e6ed;
+            margin-bottom: 35px;
+        }
+
+        .btn-close {
+            background: transparent; border: 1px solid var(--cyan); color: var(--cyan);
+            padding: 10px 25px; font-family: var(--font-display); cursor: pointer;
+            transition: 0.3s; border-radius: 4px;
+        }
+
+        .btn-close:hover {
+            background: var(--cyan); color: var(--bg-base); box-shadow: 0 0 15px var(--cyan);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Feliz 21 de Septiembre</h1>
+        <p>Porque contigo cada día se siente como una flor en primavera</p>
+    </header>
+
+    <main class="dashboard">
+        <!-- Terminal / Informática -->
+        <section class="panel terminal">
+            <div class="panel-header">
+                <span>TERMINAL_DE_RODRIGO_Y_VIC // ACCESO_ROOT</span>
+                <span style="color: var(--yellow)">[ VINCULADO ]</span>
+            </div>
+            <div class="terminal-body" id="terminalBody">
+                <div id="logsContainer">
+                    <div class="log-line log-sys">> Conectando a servidor remoto: rodrigo_heart ... OK</div>
+                    <div class="log-line log-sys">> Sincronizando latidos por minuto ... OK</div>
+                    <div class="log-line log-sys">> Estado de la conexión: Amor infinito establecido.</div>
+                    <div class="log-line log-cmd">root@cs-love:~$ _</div>
+                </div>
+                <span class="cursor" id="mainCursor"></span>
+            </div>
+        </section>
+
+        <!-- Visualizador / Robótica -->
+        <section class="panel robotics">
+            <div class="panel-header">
+                <span>RODRIGO_VISUALIZER // HEART_CONTROL_UNIT</span>
+                <span style="color: var(--yellow)">[ CALIBRADO ]</span>
+            </div>
+            <div class="robotics-body">
+                <div class="scanning-line"></div>
+                <!-- Render de alta resolución escalado por CSS -->
+                <canvas id="robotCanvas" width="600" height="450"></canvas>
+            </div>
+        </section>
+    </main>
+
+    <div class="controls">
+        <button class="cyber-button" id="btnExec" onclick="executeProtocol()">
+            Click aquí para Ejecutar Protocolo
+        </button>
+    </div>
+
+    <div class="modal-overlay" id="finalModal">
+        <div class="modal-card">
+            <h2>¡SISTEMA ENSAMBLADO! 🌻</h2>
+            
+            <!-- ========================================================= -->
+            <!-- CHICA INFORMATICA: EDITA TU MENSAJE AQUÍ ABAJO            -->
+            <!-- ========================================================= -->
+            <div class="modal-msg">
+                Mi corazón, no hay algoritmo lo suficientemente complejo ni bucle infinito que pueda medir lo mucho que te quiero. Eres el mejor hardware para mi software y la pieza exacta que le faltaba a mi sistema. Me pasé de cursi, perdón. Espero poder ser el afecto que acompañe tu felicidad y el consuelo de tus angustias cada día; ser la flor que transforme cualquier momento del año en una linda primavera. <br><br>
+                <b>¡Feliz día de las Flores Amarillas!</b> 💛
+            </div>
+            <!-- ========================================================= -->
+            <!-- FIN DEL MENSAJE                                           -->
+            <!-- ========================================================= -->
+
+            <button class="btn-close" onclick="closeModal()">FINALIZAR_SESIÓN</button>
+        </div>
+    </div>
+
+    <script>
+        // Utilidades del DOM
+        const canvas = document.getElementById('robotCanvas');
+        const ctx = canvas.getContext('2d');
+        const logsContainer = document.getElementById('logsContainer');
+        const terminalBody = document.getElementById('terminalBody');
+        const btnExec = document.getElementById('btnExec');
+
+        // Configuración de las flores
+        const baseStem = { x: 300, y: 400 }; // Nodo donde se unen todos los tallos
+        const flowers = [
+            { x: 180, y: 150, scale: 0.9, planted: false },
+            { x: 420, y: 150, scale: 0.9, planted: false },
+            { x: 300, y: 100, scale: 1.1, planted: false },
+            { x: 230, y: 240, scale: 0.8, planted: false },
+            { x: 370, y: 240, scale: 0.8, planted: false }
+        ];
+
+        // Estado del brazo robótico
+        const armBase = { x: 550, y: 450 };
+        let armCurrent = { x: 550, y: 450 }; // Empieza retraído
+        let armTarget = { x: 550, y: 450 };
+        let isSystemRunning = false;
+        let animationPhase = 0; 
+        let currentFlowerIndex = 0;
+
+        // Función de interpolación lineal (para movimiento suave)
+        const lerp = (start, end, amt) => (1 - amt) * start + amt * end;
+
+        // Escribir logs en la terminal
+        function addLog(text, typeClass = 'log-cmd') {
+            const div = document.createElement('div');
+            div.className = `log-line ${typeClass}`;
+            div.innerText = text;
+            logsContainer.appendChild(div);
+            terminalBody.scrollTop = terminalBody.scrollHeight;
+        }
+
+        function drawFlower(f) {
+            if (!f.planted) return;
+            
+            ctx.save();
+            ctx.translate(f.x, f.y);
+            
+            // Dibujar pétalos (doble capa para más detalle)
+            ctx.fillStyle = '#ffea00'; // Amarillo brillante
+            ctx.strokeStyle = '#d4c300';
+            ctx.lineWidth = 1;
+            
+            // Capa trasera
+            for(let i = 0; i < 12; i++) {
+                ctx.rotate((Math.PI * 2) / 12);
+                ctx.beginPath();
+                ctx.ellipse(25 * f.scale, 0, 25 * f.scale, 10 * f.scale, 0, 0, Math.PI * 2);
+                ctx.fill(); ctx.stroke();
+            }
+            
+            // Capa delantera con ligero desfase
+            ctx.rotate(Math.PI / 12);
+            ctx.fillStyle = '#ffdd00';
+            for(let i = 0; i < 12; i++) {
+                ctx.rotate((Math.PI * 2) / 12);
+                ctx.beginPath();
+                ctx.ellipse(20 * f.scale, 0, 20 * f.scale, 8 * f.scale, 0, 0, Math.PI * 2);
+                ctx.fill(); ctx.stroke();
+            }
+
+            // Centro de la flor (semillas)
+            ctx.fillStyle = '#4a2511';
+            ctx.beginPath();
+            ctx.arc(0, 0, 15 * f.scale, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Detalle texturizado en el centro
+            ctx.fillStyle = '#2c1407';
+            for(let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.arc(Math.random() * 10 * f.scale - 5 * f.scale, Math.random() * 10 * f.scale - 5 * f.scale, 2 * f.scale, 0, Math.PI*2);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        function drawStem(f) {
+            if (!f.planted) return;
+            ctx.strokeStyle = '#39ff14'; // Verde neón
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(baseStem.x, baseStem.y);
+            // Curva bezier para que el tallo caiga de forma natural
+            ctx.quadraticCurveTo(baseStem.x, f.y + 100, f.x, f.y);
+            ctx.stroke();
+        }
+
+        function drawRibbon() {
+            ctx.fillStyle = '#ff003c'; // Cinta roja cyberpunk
+            ctx.shadowColor = '#ff003c';
+            ctx.shadowBlur = 10;
+            
+            // Nudo central
+            ctx.fillRect(baseStem.x - 20, baseStem.y - 15, 40, 20);
+            
+            // Colas de la cinta
+            ctx.beginPath();
+            ctx.moveTo(baseStem.x - 15, baseStem.y + 5);
+            ctx.lineTo(baseStem.x - 30, baseStem.y + 40);
+            ctx.lineTo(baseStem.x - 5, baseStem.y + 35);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(baseStem.x + 15, baseStem.y + 5);
+            ctx.lineTo(baseStem.x + 30, baseStem.y + 40);
+            ctx.lineTo(baseStem.x + 5, baseStem.y + 35);
+            ctx.fill();
+            
+            ctx.shadowBlur = 0; // Reset
+        }
+
+        function drawRoboticArm() {
+            // Eslabones del brazo
+            ctx.strokeStyle = '#a0aec0';
+            ctx.lineWidth = 12;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // Brazo va de la base al punto medio, luego al efector (target)
+            let midX = (armBase.x + armCurrent.x) / 2 + 50;
+            let midY = Math.min(armBase.y, armCurrent.y) - 100;
+
+            // Cables brillantes
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 5;
+
+            ctx.beginPath();
+            ctx.moveTo(armBase.x, armBase.y);
+            ctx.quadraticCurveTo(midX, midY, armCurrent.x, armCurrent.y);
+            ctx.stroke();
+
+            // Reset shadow
+            ctx.shadowBlur = 0;
+
+            // Articulación Base
+            ctx.fillStyle = '#00f0ff';
+            ctx.beginPath(); ctx.arc(armBase.x, armBase.y, 15, 0, Math.PI*2); ctx.fill();
+
+            // Efector final (Pinza)
+            ctx.save();
+            ctx.translate(armCurrent.x, armCurrent.y);
+            
+            // Ángulo hacia el objetivo
+            let angle = Math.atan2(armCurrent.y - midY, armCurrent.x - midX);
+            ctx.rotate(angle);
+
+            ctx.fillStyle = '#1a202c';
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 2;
+            
+            // Cabeza del efector
+            ctx.fillRect(-10, -15, 20, 30);
+            ctx.strokeRect(-10, -15, 20, 30);
+            
+            // Pinzas (abiertas/cerradas dependiendo si está cerca del objetivo)
+            let isNearTarget = Math.abs(armCurrent.x - armTarget.x) < 5;
+            let pinzaOffset = isNearTarget ? 5 : 15;
+
+            ctx.fillStyle = '#ffea00';
+            ctx.fillRect(10, -pinzaOffset - 5, 15, 5); // Pinza sup
+            ctx.fillRect(10, pinzaOffset, 15, 5); // Pinza inf
+
+            ctx.restore();
+        }
+
+        function renderLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Dibujar Tallos primero (van detrás)
+            flowers.forEach(f => drawStem(f));
+
+            // 2. Lógica de interpolación del brazo
+            armCurrent.x = lerp(armCurrent.x, armTarget.x, 0.04);
+            armCurrent.y = lerp(armCurrent.y, armTarget.y, 0.04);
+
+            // 3. Dibujar Brazo Robótico (si está activo)
+            if (animationPhase < 7) {
+                drawRoboticArm();
+            }
+
+            // 4. Dibujar Flores
+            flowers.forEach(f => drawFlower(f));
+
+            // 5. Dibujar Cinta si el ramo está listo
+            if (animationPhase >= 6) {
+                drawRibbon();
+            }
+
+            requestAnimationFrame(renderLoop);
+        }
+
+        // Iniciar loop inactivo
+        renderLoop();
+
+        function executeProtocol() {
+            if(isSystemRunning) return;
+            isSystemRunning = true;
+            btnExec.disabled = true;
+            btnExec.innerText = "SISTEMA EN EJECUCIÓN...";
+
+            addLog("root@cs-love:~$ ./ejecutar_ramo.py", "log-cmd");
+            
+            setTimeout(() => {
+                addLog("[SYS] Conectando API de brazo robótico...", "log-sys");
+                processNextFlower();
+            }, 1000);
+        }
+
+        function processNextFlower() {
+            if (currentFlowerIndex < flowers.length) {
+                const targetFlower = flowers[currentFlowerIndex];
+                
+                // Mover brazo a la posición de la flor
+                armTarget = { x: targetFlower.x, y: targetFlower.y };
+                addLog(`[ROBOTICS] Enrutando servo a coords (X:${targetFlower.x}, Y:${targetFlower.y})...`, "log-sys");
+
+                // Esperar a que el brazo "llegue" (aprox 1.5s), luego plantar
+                setTimeout(() => {
+                    targetFlower.planted = true;
+                    addLog(`[INFORMATICA] Flor_0${currentFlowerIndex + 1} renderizada en la matriz.`, "log-success");
+                    
+                    currentFlowerIndex++;
+                    animationPhase = currentFlowerIndex;
+                    
+                    // Pequeña pausa antes de la siguiente flor
+                    setTimeout(processNextFlower, 800);
+                }, 1800);
+            } else {
+                // Todas las flores plantadas, poner cinta
+                armTarget = { x: baseStem.x, y: baseStem.y };
+                addLog(`[ROBOTICS] Movimiento a nodo base para cierre estructural...`, "log-sys");
+                
+                setTimeout(() => {
+                    animationPhase = 6;
+                    addLog(`[SYS] Cinta selladora aplicada.`, "log-alert");
+                    
+                    // Retraer brazo
+                    armTarget = armBase;
+                    
+                    setTimeout(() => {
+                        animationPhase = 7;
+                        addLog(`[SYS] PROTOCOLO FINALIZADO CON ÉXITO.`, "log-alert");
+                        
+                        // Mostrar Modal
+                        setTimeout(() => {
+                            document.getElementById('finalModal').classList.add('active');
+                        }, 1000);
+                    }, 1500);
+
+                }, 1500);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('finalModal').classList.remove('active');
+            btnExec.innerText = "PROTOCOLO COMPLETADO";
+        }
+    </script>
+</body>
+</html>
