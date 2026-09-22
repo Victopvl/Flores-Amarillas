@@ -71,9 +71,61 @@
             max-width: 1200px;
         }
 
-        @media (max-width: 900px) {
-            .dashboard { grid-template-columns: 1fr; }
-        }
+        /* =========================================
+   MODO VERTICAL (Celular de pie)
+   ========================================= */
+@media (orientation: portrait) and (max-width: 768px) {
+    header h1 {
+        font-size: 1.2rem;
+    }
+    
+    .dashboard {
+        grid-template-columns: 1fr; /* Un panel arriba del otro */
+        grid-template-rows: 1fr 1.5fr; /* Le da un poco más de espacio al brazo robótico */
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .terminal-logs {
+        font-size: 0.75rem; /* Letra un poco más chica para que quepa más */
+    }
+    
+    .btn-exec {
+        padding: 12px 15px;
+        font-size: 0.9rem;
+    }
+}
+
+/* =========================================
+   MODO HORIZONTAL (Celular acostado / PC)
+   ========================================= */
+@media (orientation: landscape) and (max-height: 600px) {
+    /* Si el celular está acostado, la altura es muy poca, así que achicamos márgenes */
+    header {
+        margin-bottom: 5px;
+    }
+    header h1 {
+        font-size: 1rem;
+        margin: 0;
+    }
+    header p {
+        display: none; /* Ocultamos el subtítulo para ganar espacio vital */
+    }
+    
+    .dashboard {
+        grid-template-columns: 1fr 1fr; /* Mantiene el lado a lado como en PC */
+        padding: 10px;
+    }
+
+    .controls {
+        margin-top: 10px;
+    }
+    
+    .btn-exec {
+        padding: 8px 20px;
+        font-size: 0.85rem;
+    }
+}
 
         .panel {
             background: var(--panel-bg);
